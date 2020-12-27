@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "PiBus/qi2c.h"
+#include "QDevices/qi2cmultiplexer.h"
 
 class MainWindow : public QMainWindow
 {
@@ -12,6 +12,6 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 private:
-    QI2C* qi2c;
+    QI2CMultiplexer* i2cMultiplexer;
 };
 #endif // MAINWINDOW_H

@@ -1,2 +1,16 @@
 # QI2CProtocol
-Qt implementation of I2C protocol
+Qt C++ implementation of I2C protocol and few I2C sensors i'm currently using to build _RaspiTank_, a raspberry-based tank robot.
+
+### Sensors list
+
+1. TOF10120 ([Link to DataSheet](https://github.com/manfredipist/QI2CProtocol/blob/master/DataSheets/TOF10120.pdf))
+![TOF10120](https://github.com/manfredipist/QI2CProtocol/blob/master/DataSheets/tof10120.jpg?raw=true)
+
+2. VL53L1X ([Link to DataSheet](https://github.com/manfredipist/QI2CProtocol/blob/master/DataSheets/VL53L1X.pdf))
+![VL53L1X](https://github.com/manfredipist/QI2CProtocol/blob/master/DataSheets/vl53l1x.jpg?raw=true)
+
+3. QMC5883L([Link to DataSheet](https://github.com/manfredipist/QI2CProtocol/blob/master/DataSheets/QMC5883L.pdf))
+![QMC5883L](https://github.com/manfredipist/QI2CProtocol/blob/master/DataSheets/qmc5883l.jpg?raw=true)
+
+4. MPU6050 ([Link to DataSheet](https://github.com/manfredipist/QI2CProtocol/blob/master/DataSheets/MPU6050.pdf))
+![MPU6050](https://github.com/manfredipist/QI2CProtocol/blob/master/DataSheets/mpu6050.jpg?raw=true)
