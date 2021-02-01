@@ -1,11 +1,11 @@
-#ifndef PITIMEOFFLIGHT_H
-#define PITIMEOFFLIGHT_H
+#ifndef PIVL53L1X_H
+#define PIVL53L1X_H
 
 #include <QObject>
 #include <QDebug>
 #include <QtMath>
 
-#include "QBus/qi2c.h"
+#include "PiBus/qi2c.h"
 
 #define VL53L1X_DISTANCE_MODE_SHORT  1
 #define VL53L1X_DISTANCE_MODE_LONG   2
@@ -52,24 +52,15 @@
 #define VL53L1_IDENTIFICATION__MODEL_ID                                     0x010F
 #define VL53L1_ROI_CONFIG__MODE_ROI_CENTRE_SPAD                             0x013E
 
-class QVL53L1X : public QObject
+class PiVL53L1X : public QObject
 {
     Q_OBJECT
 public:
-    explicit QVL53L1X(uint8_t i2c_bus, uint8_t i2c_address, QObject *parent = nullptr);
-    ~QVL53L1X();
+    explicit PiVL53L1X(uint8_t i2c_bus, uint8_t i2c_address, QObject *parent = nullptr);
+    ~PiVL53L1X();
 public slots:
     void initialize();
-    uint16_t getDistance();
-    int getDistanceMode();
-    void setDistanceMode(const int &distanceMode);
-    int getTimingBudgetInMs();
-    void setTimingBudgetInMs(const int &timingBudgetInMs);
-    uint32_t getInterMeasurementInMs();
-    void setInterMeasurementInMs(const uint32_t &interMeasMs);
-    uint8_t getRangeStatus();
-    bool isDataReady();
-    bool clearInterrupt();
+    double getDistance();
 signals:
 private slots:
     void sensorInit();
@@ -79,6 +70,17 @@ private slots:
 
     bool stopRanging();
     uint8_t bootState();
+
+    uint16_t getUIntDistance();
+    int getDistanceMode();
+    void setDistanceMode(const int &distanceMode);
+    int getTimingBudgetInMs();
+    void setTimingBudgetInMs(const int &timingBudgetInMs);
+    uint32_t getInterMeasurementInMs();
+    void setInterMeasurementInMs(const uint32_t &interMeasMs);
+    uint8_t getRangeStatus();
+    bool isDataReady();
+    bool clearInterrupt();
 
 private:
     QI2C *i2c;
@@ -183,4 +185,4 @@ const uint8_t VL51L1X_DEFAULT_CONFIGURATION[] = {
 
 const int status_rtn[] = {255, 255, 255, 5, 2, 4, 1, 7, 3, 0,255, 255, 9, 13, 255, 255, 255, 255, 10, 6,255, 255, 11, 12};
 
-#endif // PITIMEOFFLIGHT_H
+#endif // PIVL53L1X_H

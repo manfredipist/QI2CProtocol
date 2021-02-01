@@ -1,15 +1,15 @@
-#include "qqmc5883l.h"
+#include "piqmc5883l.h"
 
-QQMC5883L::QQMC5883L(const uint8_t i2c_bus, const uint8_t i2c_address, QObject *parent) : QObject(parent), i2c_bus(i2c_bus), i2c_address(i2c_address)
+PiQMC5883L::PiQMC5883L(const uint8_t i2c_bus, const uint8_t i2c_address, QObject *parent) : QObject(parent), i2c_bus(i2c_bus), i2c_address(i2c_address)
 {
     i2c = new QI2C(i2c_bus,i2c_address,this);
 }
 
-QQMC5883L::~QQMC5883L(){
+PiQMC5883L::~PiQMC5883L(){
     i2c->i2cClose();
 }
 
-void QQMC5883L::initialize() {
+void PiQMC5883L::initialize() {
     softReset();
     disableInterrupt();
     defineSetResetPeriod();
@@ -21,8 +21,8 @@ void QQMC5883L::initialize() {
     setConfiguration();
 
     //calibrate();
-    //setCalibrationOffsets(-1012, 5245, -7887, 0, 0, 2592);
-    setCalibrationOffsets(-3195, 2430, -6775, 0, 0, 7590);
+    setCalibrationOffsets(-2817, 4392, -2430, 9775, -4200, 5997);
+    //setCalibrationOffsets(1.0000912557105424, 0.003915423209277943, 418.0882138871126, 0.003915423209277943, 1.1679953924705968, -923.1265637992069, 0.0, 0.0, 1.0);
 
     if(i2c->readByte8(QMC5883L_CHIP_ID) == 0xFF)
         qDebug()<<"QMC5883L Initialization: SUCCESS";
@@ -30,26 +30,26 @@ void QQMC5883L::initialize() {
         qDebug()<<"QMC5883L Initialization: FAILURE";
 }
 
-void QQMC5883L::softReset()
+void PiQMC5883L::softReset()
 {
     i2c->writeByte8(QMC5883L_CONFIG2, QMC5883L_CONFIG2_SRST);
 }
 
-void QQMC5883L::disableInterrupt(){
+void PiQMC5883L::disableInterrupt(){
     i2c->writeByte8(QMC5883L_CONFIG2, QMC5883L_CONFIG2_IENB);
 }
 
-void QQMC5883L::defineSetResetPeriod()
+void PiQMC5883L::defineSetResetPeriod()
 {
     i2c->writeByte8(QMC5883L_RESET, 0x01);
 }
 
-void QQMC5883L::setConfiguration()
+void PiQMC5883L::setConfiguration()
 {
     i2c->writeByte8(QMC5883L_CONFIG, mode|oversampling|range|rate);
 }
 
-void QQMC5883L::setMode(const int &x){
+void PiQMC5883L::setMode(const int &x){
     switch(x) {
         case 0:
             mode = QMC5883L_CONFIG_STANDBY;
@@ -60,7 +60,7 @@ void QQMC5883L::setMode(const int &x){
     }
 }
 
-void QQMC5883L::setOversampling(const int &x)
+void PiQMC5883L::setOversampling(const int &x)
 {
     switch(x) {
         case 512:
@@ -78,7 +78,7 @@ void QQMC5883L::setOversampling(const int &x)
     }
 }
 
-void QQMC5883L::setRange(const int &x)
+void PiQMC5883L::setRange(const int &x)
 {
     switch(x) {
         case 2:
@@ -90,7 +90,7 @@ void QQMC5883L::setRange(const int &x)
     }
 }
 
-void QQMC5883L::setSamplingRate(const int &x)
+void PiQMC5883L::setSamplingRate(const int &x)
 {
     switch(x) {
         case 10:
@@ -108,29 +108,30 @@ void QQMC5883L::setSamplingRate(const int &x)
     }
 }
 
-int QQMC5883L::readRaw(int16_t *x, int16_t *y, int16_t *z)
+bool PiQMC5883L::readRaw(int16_t *x, int16_t *y, int16_t *z)
 {
+    if(!isDataReady())
+        return false;
+
     uint8_t data[6];
     i2c->readBytes8(QMC5883L_X_LSB, 6, data);
-
     *x = (data[0] | (data[1] << 8));
     *y = (data[2] | (data[3] << 8));
     *z = (data[4] | (data[5] << 8));
 
-    if(*x == 0 && *y == 0 && *z == 0)
-        return 0;
-
-    return 1;
+    return true;
 }
 
-void QQMC5883L::calibrate(){
+void PiQMC5883L::calibrate(){
     int16_t x, y, z;
     int calibrationData[3][2] ={{0}};
 
     for(int i=0;i<10000;i++){
         qDebug()<<"Remaining "<<10000-i<<" iterations!";
-        readRaw(&x,&y,&z);
-
+        if(!readRaw(&x,&y,&z)){
+            i--;
+            continue;
+        }
         if(x < calibrationData[0][0])
           calibrationData[0][0] = x;
 
@@ -156,7 +157,7 @@ void QQMC5883L::calibrate(){
     qDebug()<<output;
 }
 
-void QQMC5883L::setCalibrationOffsets(const int &c1, const int &c2, const int &c3,
+void PiQMC5883L::setCalibrationOffsets(const int &c1, const int &c2, const int &c3,
                                     const int &c4, const int &c5, const int &c6) {
     QVector<int> vec;
 
@@ -178,56 +179,57 @@ void QQMC5883L::setCalibrationOffsets(const int &c1, const int &c2, const int &c
     calibration.push_back(vec);
 }
 
-void QQMC5883L::resetCalibrationOffsets() {
+void PiQMC5883L::setCalibrationOffsets(const float &c1, const float &c2, const float &c3,
+                                           const float &c4, const float &c5, const float &c6,
+                                           const float &c7, const float &c8, const float &c9) {
+    QVector<float> vec;
+
+    vec.push_back(c1);
+    vec.push_back(c2);
+    vec.push_back(c3);
+
+    calibration2.push_back(vec);
+    vec.clear();
+
+    vec.push_back(c4);
+    vec.push_back(c5);
+    vec.push_back(c6);
+
+    calibration2.push_back(vec);
+    vec.clear();
+
+    vec.push_back(c7);
+    vec.push_back(c8);
+    vec.push_back(c9);
+
+    calibration2.push_back(vec);
+}
+
+void PiQMC5883L::resetCalibrationOffsets() {
     for(int i=0;i<3;i++){
         QVector<int> vec;
-        for(int j=0;j<2;j++)
+        for(int j=0;j<3;j++)
             vec.push_back(0.0);
         calibration.push_back(vec);
     }
 }
 
-void QQMC5883L::setDeclination(const float &declination) {
+void PiQMC5883L::setDeclination(const float &declination) {
     this->declination = declination;
 }
 
-void QQMC5883L::resetDeclination() {
+void PiQMC5883L::resetDeclination() {
     declination = 0.0;
 }
 
 
-bool QQMC5883L::isDataReady()
+bool PiQMC5883L::isDataReady()
 {
     uint8_t status = i2c->readByte8(QMC5883L_STATUS);
     return status & QMC5883L_STATUS_DRDY;
 }
 
-int QQMC5883L::readHeading()
-{
-    int16_t x, y, z;
-
-    if(!readRaw(&x, &y, &z))
-        return 0;
-
-    float calibrated_x = x * calibration[0][0] + y * calibration[0][1] + calibration[0][2];
-    float calibrated_y = x * calibration[1][0] + y * calibration[1][1] + calibration[1][2];
-
-    float heading = 180.0*atan2(calibrated_x,calibrated_y)/M_PI;
-
-    if(heading<0)
-        heading += 360;
-
-    heading+=declination;
-
-    if(heading<0.0)
-        heading += 360.0;
-    else if(heading>=360.0)
-        heading -= 360.0;
-
-    return heading;
-}
-
-int QQMC5883L::readCalibratedHeading()
+int PiQMC5883L::readCalibratedHeading()
 {
     int16_t x, y, z;
 
@@ -251,10 +253,66 @@ int QQMC5883L::readCalibratedHeading()
     int calibrated_y = (y - y_offset) * y_scale;
     int calibrated_z = (z - z_offset) * z_scale;
 
-    int heading = 180*atan2(calibrated_x,calibrated_y)/M_PI;
+    int heading = 180*atan2(calibrated_y,calibrated_x)/M_PI;
 
     if(heading<0)
         heading += 360;
+
+    return heading;
+}
+
+
+int PiQMC5883L::readCalibratedHeading2()
+{
+    int16_t x, y, z;
+    if(!readRaw(&x, &y, &z))
+        return -1;
+
+    float calibrated_x = x * calibration2[0][0] + y * calibration2[0][1] + calibration2[0][2];
+    float calibrated_y = x * calibration2[1][0] + y * calibration2[1][1] + calibration2[1][2];
+
+    float heading = 180.0*atan2(calibrated_y,calibrated_x)/M_PI;
+
+    if(heading<0)
+        heading += 360;
+
+    heading+=declination;
+
+    if(heading<0.0)
+        heading += 360.0;
+    else if(heading>=360.0)
+        heading -= 360.0;
+
+    return heading;
+}
+
+int PiQMC5883L::readCalibratedHeading3(){
+    /* Update the observed boundaries of the measurements */
+    int16_t x, y, z;
+    if(!readRaw(&x, &y, &z))
+        return -1;
+
+    if(x<xlow) xlow = x;
+    if(x>xhigh) xhigh = x;
+    if(y<ylow) ylow = y;
+    if(y>yhigh) yhigh = y;
+
+    /* Bail out if not enough data is available. */
+
+    if( xlow==xhigh || ylow==yhigh ) return 0;
+
+    /* Recenter the measurement by subtracting the average */
+
+    x -= (xhigh+xlow)/2;
+    y -= (yhigh+ylow)/2;
+
+    /* Rescale the measurement to the range observed. */
+
+    float fx = (float)x/(xhigh-xlow);
+    float fy = (float)y/(yhigh-ylow);
+
+    int heading = 180.0*atan2(fy,fx)/M_PI;
+    if(heading<=0) heading += 360;
 
     return heading;
 }

@@ -1,15 +1,15 @@
-#include "qvl53l1x.h"
+#include "pivl53l1x.h"
 
-QVL53L1X::QVL53L1X(uint8_t i2c_bus, uint8_t i2c_address, QObject *parent) : QObject(parent), i2c_bus(i2c_bus), i2c_address(i2c_address)
+PiVL53L1X::PiVL53L1X(uint8_t i2c_bus, uint8_t i2c_address, QObject *parent) : QObject(parent), i2c_bus(i2c_bus), i2c_address(i2c_address)
 {
     i2c = new QI2C(i2c_bus,i2c_address,this);
 }
 
-QVL53L1X::~QVL53L1X(){
+PiVL53L1X::~PiVL53L1X(){
     i2c->i2cClose();
 }
 
-void QVL53L1X::initialize(){
+void PiVL53L1X::initialize(){
     sensorInit();
 
     setDistanceMode(VL53L1X_DISTANCE_MODE_LONG);
@@ -26,7 +26,7 @@ void QVL53L1X::initialize(){
     startRanging();
 }
 
-void QVL53L1X::sensorInit() {
+void PiVL53L1X::sensorInit() {
     for (uint8_t reg = 0x2D; reg <= 0x87; reg++)
        i2c->writeByte16(reg, VL51L1X_DEFAULT_CONFIGURATION[reg - 0x2D]);
 
@@ -40,21 +40,21 @@ void QVL53L1X::sensorInit() {
     i2c->writeByte16(0x0B, 0); /* start VHV from the previous temperature */
 }
 
-uint16_t QVL53L1X::getSensorId() {
+uint16_t PiVL53L1X::getSensorId() {
     return i2c->readWord16(VL53L1_IDENTIFICATION__MODEL_ID);
 }
 
-bool QVL53L1X::startRanging() {
+bool PiVL53L1X::startRanging() {
     return i2c->writeByte16(SYSTEM__MODE_START, 0x40);	/* Enable VL53L1X */
 }
 
-uint8_t QVL53L1X::getInterruptPolarity() {
+uint8_t PiVL53L1X::getInterruptPolarity() {
     uint8_t temp = i2c->readByte16(GPIO_HV_MUX__CTRL);
     temp = temp & 0x10;
     return (temp>>4) ? 0 : 1;
 }
 
-bool QVL53L1X::isDataReady() {
+bool PiVL53L1X::isDataReady() {
     uint8_t intPol = getInterruptPolarity();
     uint8_t temp = i2c->readByte16(GPIO__TIO_HV_STATUS);
     if ((temp & 1) == intPol) {
@@ -63,23 +63,30 @@ bool QVL53L1X::isDataReady() {
     return false;
 }
 
-bool QVL53L1X::clearInterrupt() {
+bool PiVL53L1X::clearInterrupt() {
     return i2c->writeByte16(SYSTEM__INTERRUPT_CLEAR, 0x01);
 }
 
-bool QVL53L1X::stopRanging() {
+bool PiVL53L1X::stopRanging() {
     return i2c->writeByte16(SYSTEM__MODE_START, 0x00);	/* Disable VL53L1X */
 }
 
-uint16_t QVL53L1X::getDistance() {
+uint16_t PiVL53L1X::getUIntDistance() {
     return i2c->readWord16(VL53L1_RESULT__FINAL_CROSSTALK_CORRECTED_RANGE_MM_SD0);
 }
 
-uint8_t QVL53L1X::bootState() {
+double PiVL53L1X::getDistance(){
+    if(isDataReady())
+        return getUIntDistance()/10.0;
+    else
+        return -1;
+}
+
+uint8_t PiVL53L1X::bootState() {
     return i2c->readByte16(VL53L1_FIRMWARE__SYSTEM_STATUS);
 }
 
-int QVL53L1X::getTimingBudgetInMs() {
+int PiVL53L1X::getTimingBudgetInMs() {
     uint16_t temp = i2c->readWord16(RANGE_CONFIG__TIMEOUT_MACROP_A_HI);
     int timingBudget;
     switch (temp) {
@@ -117,7 +124,7 @@ int QVL53L1X::getTimingBudgetInMs() {
     return timingBudget;
 }
 
-int QVL53L1X::getDistanceMode() {
+int PiVL53L1X::getDistanceMode() {
     uint8_t tempDM = i2c->readByte16(PHASECAL_CONFIG__TIMEOUT_MACROP);
     int distanceMode = 0;
     if (tempDM == 0x14) {
@@ -128,7 +135,7 @@ int QVL53L1X::getDistanceMode() {
     return distanceMode;
 }
 
-void QVL53L1X::setTimingBudgetInMs(const int &timingBudgetInMs) {
+void PiVL53L1X::setTimingBudgetInMs(const int &timingBudgetInMs) {
     const int distanceMode = getDistanceMode();
     if (distanceMode == 0) {
         qDebug()<<"Unexpected distanceMode";
@@ -198,7 +205,7 @@ void QVL53L1X::setTimingBudgetInMs(const int &timingBudgetInMs) {
     }
 }
 
-void QVL53L1X::setDistanceMode(const int &distanceMode) {
+void PiVL53L1X::setDistanceMode(const int &distanceMode) {
     const int timingBudget = getTimingBudgetInMs();
 
     if (distanceMode == 1) {
@@ -221,7 +228,7 @@ void QVL53L1X::setDistanceMode(const int &distanceMode) {
     setTimingBudgetInMs(timingBudget);
 }
 
-uint32_t QVL53L1X::getInterMeasurementInMs() {
+uint32_t PiVL53L1X::getInterMeasurementInMs() {
     uint32_t pIM = i2c->readDoubleWord16(VL53L1_SYSTEM__INTERMEASUREMENT_PERIOD);
     uint16_t clockPLL = i2c->readWord16(VL53L1_RESULT__OSC_CALIBRATE_VAL);
     clockPLL = clockPLL & 0x03FF;
@@ -229,7 +236,7 @@ uint32_t QVL53L1X::getInterMeasurementInMs() {
     return pIM;
 }
 
-void QVL53L1X::setInterMeasurementInMs(const uint32_t &interMeasMs) {
+void PiVL53L1X::setInterMeasurementInMs(const uint32_t &interMeasMs) {
     uint16_t clockPLL = i2c->readWord16(VL53L1_RESULT__OSC_CALIBRATE_VAL);
     clockPLL = clockPLL & 0x3FF;
     i2c->writeDoubleWord(VL53L1_SYSTEM__INTERMEASUREMENT_PERIOD, round(clockPLL * interMeasMs * 1.075));
@@ -264,7 +271,7 @@ void QVL53L1X::setInterMeasurementInMs(const uint32_t &interMeasMs) {
  * However, that is a very approximate estimation.
  */
 
-uint8_t QVL53L1X::getRangeStatus() {
+uint8_t PiVL53L1X::getRangeStatus() {
     uint8_t rangeStatus = i2c->readByte16(VL53L1_RESULT__RANGE_STATUS);
     rangeStatus = rangeStatus & 0x1F;
     if (rangeStatus < 24)

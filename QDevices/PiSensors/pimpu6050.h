@@ -1,12 +1,11 @@
-#ifndef PIGYROACCELEROMETER_H
-#define PIGYROACCELEROMETER_H
+#ifndef PIMPU6050_H
+#define PIMPU6050_H
 
 #include <QObject>
 #include <QDebug>
 #include <QtMath>
-#include <QThread>
 
-#include "QBus/qi2c.h"
+#include "PiBus/qi2c.h"
 
 // WHO_AM_I registers
 #define MPU6050_RA_WHO_AM_I                0x75
@@ -101,12 +100,12 @@
 #define TAU 0.05 //Complementary filter percentage
 #define RAD_T_DEG 57.29577951308 //Radians to degrees (180/PI)
 
-class QMPU6050 : public QObject
+class PiMPU6050 : public QObject
 {
     Q_OBJECT
 public:
-    explicit QMPU6050(const uint8_t i2c_bus, const uint8_t i2c_address, QObject *parent = nullptr);
-    ~QMPU6050();
+    explicit PiMPU6050(const uint8_t i2c_bus, const uint8_t i2c_address, QObject *parent = nullptr);
+    ~PiMPU6050();
 public slots:
     void initialize();    
 
@@ -127,6 +126,7 @@ public slots:
     void getMotion6(float *ax, float *ay, float *az, float *gx, float *gy, float *gz);
     void getFilteredMotion();
     float getYaw();
+
 signals:
 private slots:
     uint8_t getDeviceID();
@@ -167,4 +167,4 @@ private:
     struct timespec start,end; //Create a time structure
 };
 
-#endif // PIGYROACCELEROMETER_H
+#endif // PIMPU6050_H

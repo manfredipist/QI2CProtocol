@@ -1,15 +1,15 @@
-#include "qmpu6050.h"
+#include "pimpu6050.h"
 
-QMPU6050::QMPU6050(const uint8_t i2c_bus, const uint8_t i2c_address, QObject *parent) : QObject(parent), i2c_bus(i2c_bus), i2c_address(i2c_address)
+PiMPU6050::PiMPU6050(const uint8_t i2c_bus, const uint8_t i2c_address, QObject *parent) : QObject(parent), i2c_bus(i2c_bus), i2c_address(i2c_address)
 {
     i2c = new QI2C(i2c_bus,i2c_address,this);
 }
 
-QMPU6050::~QMPU6050(){
+PiMPU6050::~PiMPU6050(){
     i2c->i2cClose();
 }
 
-void QMPU6050::initialize(){
+void PiMPU6050::initialize(){
     setSleepEnabled(0);
     setGyroRange(250);
     setAccelRange(2);
@@ -20,37 +20,36 @@ void QMPU6050::initialize(){
         qDebug()<<"MPU6050 Initialization: FAILURE";
 
     //calibrate();
-    //setCalibrationOffsets(494.299, -170.241, 2763.41, -311.272, 256.172, 76.2543);
-    setCalibrationOffsets(332.575, -239.116, 2581.87, -341.182, 232.903, -13.7107);
+    setCalibrationOffsets(968.615, 479.349, 162.252, -54.824, -211.708, 199.787);
     clock_gettime(CLOCK_REALTIME, &start); //Read current time into start variable
 }
 
-uint8_t QMPU6050::getDeviceID() {
+uint8_t PiMPU6050::getDeviceID() {
     uint8_t buffer = i2c->readBits8(MPU6050_RA_WHO_AM_I, MPU6050_WHO_AM_I_BIT, MPU6050_WHO_AM_I_LENGTH);
     return buffer;
 }
 
-bool QMPU6050::testConnection() {
+bool PiMPU6050::testConnection() {
     return getDeviceID() == 0x34;
 }
 
-void QMPU6050::setSleepEnabled(uint8_t enabled) {
+void PiMPU6050::setSleepEnabled(uint8_t enabled) {
     i2c->writeBit8(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_SLEEP_BIT, enabled);
 }
 
-void QMPU6050::setDLPF(uint8_t hz) {
+void PiMPU6050::setDLPF(uint8_t hz) {
     i2c->writeByte8(MPU6050_RA_CONFIG, hz);
 }
 
-void QMPU6050::setSampleRateDivider(uint8_t rate) {
+void PiMPU6050::setSampleRateDivider(uint8_t rate) {
     i2c->writeByte8(MPU6050_RA_SMPLRT_DIV, rate);
 }
 
-void QMPU6050::setClockSource(uint8_t source) {
+void PiMPU6050::setClockSource(uint8_t source) {
     i2c->writeBits8(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CLKSEL_BIT, MPU6050_PWR1_CLKSEL_LENGTH, source);
 }
 
-uint16_t QMPU6050::getGyroRange(const bool &raw){
+uint16_t PiMPU6050::getGyroRange(const bool &raw){
     uint8_t raw_data = i2c->readByte8(MPU6050_RA_GYRO_CONFIG);
 
     if(raw)
@@ -69,7 +68,7 @@ uint16_t QMPU6050::getGyroRange(const bool &raw){
     }
 }
 
-void QMPU6050::setGyroRange(uint16_t range){
+void PiMPU6050::setGyroRange(uint16_t range){
     if(range == 250)
         i2c->writeBits8(MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_FS_SEL_BIT, MPU6050_GCONFIG_FS_SEL_LENGTH, GYRO_RANGE_250DEG);
     else if(range == 500)
@@ -80,7 +79,7 @@ void QMPU6050::setGyroRange(uint16_t range){
         i2c->writeBits8(MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_FS_SEL_BIT, MPU6050_GCONFIG_FS_SEL_LENGTH, GYRO_RANGE_2000DEG);
 }
 
-uint16_t QMPU6050::getAccelRange(const bool &raw){
+uint16_t PiMPU6050::getAccelRange(const bool &raw){
     uint8_t raw_data = i2c->readByte8(MPU6050_RA_ACCEL_CONFIG);
 
     if(raw)
@@ -99,7 +98,7 @@ uint16_t QMPU6050::getAccelRange(const bool &raw){
     }
 }
 
-void QMPU6050::setAccelRange(uint8_t range) {
+void PiMPU6050::setAccelRange(uint8_t range) {
     if(range == 2)
         i2c->writeBits8(MPU6050_RA_ACCEL_CONFIG, MPU6050_ACONFIG_AFS_SEL_BIT, MPU6050_ACONFIG_AFS_SEL_LENGTH, ACCEL_RANGE_2G);
     else if(range == 4)
@@ -110,19 +109,19 @@ void QMPU6050::setAccelRange(uint8_t range) {
         i2c->writeBits8(MPU6050_RA_ACCEL_CONFIG, MPU6050_ACONFIG_AFS_SEL_BIT, MPU6050_ACONFIG_AFS_SEL_LENGTH, ACCEL_RANGE_16G);
 }
 
-double QMPU6050::getTemperature() {
+double PiMPU6050::getTemperature() {
     int16_t buffer = i2c->readWord8(MPU6050_RA_TEMP_OUT);
     double temp = buffer/340.0+36.5;
     return (int)(temp*100+0.5)/100.0;
 }
 
-void QMPU6050::getAccelerationRaw(float* x, float* y, float* z) {
+void PiMPU6050::getAccelerationRaw(float* x, float* y, float* z) {
     *x = getAccelerationX();
     *y = getAccelerationY();
     *z = getAccelerationZ();
 }
 
-void QMPU6050::getAcceleration(float* x, float* y, float* z) {
+void PiMPU6050::getAcceleration(float* x, float* y, float* z) {
     float _x = getAccelerationX();
     float _y = getAccelerationY();
     float _z = getAccelerationZ();
@@ -152,28 +151,28 @@ void QMPU6050::getAcceleration(float* x, float* y, float* z) {
     }
 }
 
-int16_t QMPU6050::getAccelerationX() {
+int16_t PiMPU6050::getAccelerationX() {
     int16_t buffer = i2c->readWord8(MPU6050_RA_ACCEL_XOUT_H);
     return buffer;
 }
 
-int16_t QMPU6050::getAccelerationY() {
+int16_t PiMPU6050::getAccelerationY() {
     int16_t buffer = i2c->readWord8(MPU6050_RA_ACCEL_YOUT_H);
     return buffer;
 }
 
-int16_t QMPU6050::getAccelerationZ() {
+int16_t PiMPU6050::getAccelerationZ() {
     int16_t buffer = i2c->readWord8(MPU6050_RA_ACCEL_ZOUT_H);
     return buffer;
 }
 
-void QMPU6050::getRotationRaw(float *x, float *y, float *z) {
+void PiMPU6050::getRotationRaw(float *x, float *y, float *z) {
     *x = getRotationX();
     *y = getRotationY();
     *z = getRotationZ();
 }
 
-void QMPU6050::getRotation(float *x, float *y, float *z) {
+void PiMPU6050::getRotation(float *x, float *y, float *z) {
     float _x = getRotationX();
     float _y = getRotationY();
     float _z = getRotationZ();
@@ -197,27 +196,27 @@ void QMPU6050::getRotation(float *x, float *y, float *z) {
     *z = qRound((_z - calibration[1][2]) * 1000.0 / gyro_scale_modifier) / 1000.0;
 }
 
-int16_t QMPU6050::getRotationX() {
+int16_t PiMPU6050::getRotationX() {
     int16_t buffer = i2c->readWord8(MPU6050_RA_GYRO_XOUT_H);
     return buffer;
 }
 
-int16_t QMPU6050::getRotationY() {
+int16_t PiMPU6050::getRotationY() {
     int16_t buffer = i2c->readWord8(MPU6050_RA_GYRO_YOUT_H);
     return buffer;
 }
 
-int16_t QMPU6050::getRotationZ() {
+int16_t PiMPU6050::getRotationZ() {
     int16_t buffer = i2c->readWord8(MPU6050_RA_GYRO_ZOUT_H);
     return buffer;
 }
 
-void QMPU6050::getMotion6(float* ax, float* ay, float* az, float* gx, float* gy, float* gz) {
+void PiMPU6050::getMotion6(float* ax, float* ay, float* az, float* gx, float* gy, float* gz) {
     getAcceleration(ax,ay,az);
     getRotation(gx,gy,gz);
 }
 
-void QMPU6050::getFilteredMotion() {
+void PiMPU6050::getFilteredMotion() {
     float ax, ay, az, gr, gp, gy; //Temporary storage variables used in _update()
 
     getRotation(&gr, &gp, &gy); //Get the data from the sensors
@@ -274,14 +273,14 @@ void QMPU6050::getFilteredMotion() {
     clock_gettime(CLOCK_REALTIME, &start); //Save time to start clock
 }
 
-float QMPU6050::getYaw(){
+float PiMPU6050::getYaw(){
     calc_yaw=true;
     getFilteredMotion();
     calc_yaw=false;
     return angle[2];
 }
 
-void QMPU6050::calibrate() {
+void PiMPU6050::calibrate() {
     float ax_off = 0.0, ay_off = 0.0, az_off = 0.0;
     float gr_off = 0.0, gp_off = 0.0, gy_off = 0.0;
 
@@ -310,7 +309,7 @@ void QMPU6050::calibrate() {
     qDebug()<<output;
 }
 
-void QMPU6050::setCalibrationOffsets(const float &c1, const float &c2, const float &c3,
+void PiMPU6050::setCalibrationOffsets(const float &c1, const float &c2, const float &c3,
                                     const float &c4, const float &c5, const float &c6) {
     QVector<float> vec;
 
@@ -328,7 +327,7 @@ void QMPU6050::setCalibrationOffsets(const float &c1, const float &c2, const flo
     calibration.push_back(vec);
 }
 
-void QMPU6050::resetCalibrationOffsets() {
+void PiMPU6050::resetCalibrationOffsets() {
     for(int i=0;i<2;i++){
         QVector<float> vec;
         for(int j=0;j<3;j++)

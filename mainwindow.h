@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "QDevices/qi2cmultiplexer.h"
+#include "QDevices/PiI2CMultiplexer/qi2cmultiplexer.h"
 
 class MainWindow : public QMainWindow
 {

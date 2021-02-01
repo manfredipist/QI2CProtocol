@@ -1,11 +1,11 @@
-#ifndef PIMAGNETOMETER_H
-#define PIMAGNETOMETER_H
+#ifndef PIQMC5883L_H
+#define PIQMC5883L_H
 
 #include <QObject>
 #include <QDebug>
 #include <QtMath>
 
-#include "QBus/qi2c.h"
+#include "PiBus/qi2c.h"
 
 /* Register numbers */
 #define QMC5883L_X_LSB          0x00
@@ -55,18 +55,20 @@
 
 #define DECLINATION 3.339
 
-class QQMC5883L : public QObject
+class PiQMC5883L : public QObject
 {
     Q_OBJECT
 public:
-    explicit QQMC5883L(const uint8_t i2c_bus, const uint8_t i2c_address, QObject *parent = nullptr);
-    ~QQMC5883L();
+    explicit PiQMC5883L(const uint8_t i2c_bus, const uint8_t i2c_address, QObject *parent = nullptr);
+    ~PiQMC5883L();
 public slots:
     void initialize();
 
     bool isDataReady();
-    int readHeading();
     int readCalibratedHeading();
+    int readCalibratedHeading2();
+    int readCalibratedHeading3();
+
 signals:
 private slots:
     void softReset();
@@ -79,11 +81,14 @@ private slots:
     void setRange(const int &x);
     void setSamplingRate(const int &x);
 
-    int readRaw(int16_t *x, int16_t *y, int16_t *z);
+    bool readRaw(int16_t *x, int16_t *y, int16_t *z);
 
     void calibrate();
     void setCalibrationOffsets(const int &c1, const int &c2, const int &c3,
                         const int &c4, const int &c5, const int &c6);
+    void setCalibrationOffsets(const float &c1, const float &c2, const float &c3,
+                        const float  &c4, const float &c5, const float &c6,
+                        const float &c7, const float &c8, const float &c9);
     void resetCalibrationOffsets();
 
     void setDeclination(const float &declination);
@@ -95,7 +100,7 @@ private:
     const uint8_t i2c_bus;
     const uint8_t i2c_address;
 
-    //QVector<QVector<float>> calibration;
+    QVector<QVector<float>> calibration2;
     QVector<QVector<int>> calibration;
     float declination = 10.0;
 
@@ -103,6 +108,8 @@ private:
     uint8_t rate;
     uint8_t range;
     uint8_t oversampling;
+
+    int xlow,ylow,xhigh,yhigh=0;
 };
 
-#endif // PIMAGNETOMETER_H
+#endif // PIQMC5883L_H

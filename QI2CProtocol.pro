@@ -10,21 +10,25 @@ CONFIG += c++11
 
 SOURCES += \
     QBus/qi2c.cpp \
-    QDevices/qi2cmultiplexer.cpp \
-    QDevices/qmpu6050.cpp \
-    QDevices/qqmc5883l.cpp \
-    QDevices/qtof10120.cpp \
-    QDevices/qvl53l1x.cpp \
+    QDevices/PiI2CMultiplexer/pitca9548a.cpp \
+    QDevices/PiSensors/pihcsr04.cpp \
+    QDevices/PiSensors/pimpu6050.cpp \
+    QDevices/PiSensors/piqmc5883l.cpp \
+    QDevices/PiSensors/pitof10120.cpp \
+    QDevices/PiSensors/pivl53l1x.cpp \
+    QDevices/PiPWMController/pipca9685.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     QBus/qi2c.h \
-    QDevices/qi2cmultiplexer.h \
-    QDevices/qmpu6050.h \
-    QDevices/qqmc5883l.h \
-    QDevices/qtof10120.h \
-    QDevices/qvl53l1x.h \
+    QDevices/PiI2CMultiplexer/pitca9548a.h \
+    QDevices/PiSensors/pihcsr04.h \
+    QDevices/PiSensors/pimpu6050.h \
+    QDevices/PiSensors/piqmc5883l.h \
+    QDevices/PiSensors/pitof10120.h \
+    QDevices/PiSensors/pivl53l1x.h \
+    QDevices/PiPWMController/pipca9685.h \
     mainwindow.h
 
 # Default rules for deployment.
